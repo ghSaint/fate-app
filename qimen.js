@@ -334,7 +334,7 @@
     for (let i = 0; i < 12; i++) {
       const d = new Date(start.getTime() + i * 2 * 3600 * 1000 + 30 * 60 * 1000);
       const tt = { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate(), hour: d.getHours(), minute: d.getMinutes() };
-      const b = cast(tt);
+      const b = cast({ ...tt, method: t.method });
       const r = read(b, topic, ctx);
       const from = new Date(d.getTime() - 30 * 60 * 1000);
       out.push({ t: tt, from, branch: b.pillars.hour[1], hourGz: b.pillars.hour, day: b.pillars.day, score: r.score, level: r.level, verdict: r.verdict, ju: `${b.yang ? '阳' : '阴'}${b.ju}` });
