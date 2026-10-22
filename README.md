@@ -10,6 +10,7 @@ Live version (private until shared): https://claude.ai/artifact/RCtz7MDGep1ChGbR
 - **Shows its working:** every reading lists each BaZi and Zi Wei rule that fired, its points, and how the two systems' scores were combined.
 - **Luck timeline (大运流年):** scores every year of every 10-year luck pillar, as a lifetime curve and a year-by-year grid per decade.
 - **Ask Claude:** a chat that sends both charts, the year reading and the timeline to Claude with your question. This works only when the page is opened on claude.ai.
+- **Ask a question (奇门遁甲):** a second tab that casts a Qimen Dunjia hour chart (rotating plate, Chai Bu or Mao Shan 局) for the moment of your question. It reads the indicator palaces for the topic and draws the nine-palace board, a direction compass and a timing chart of the next twelve two-hour periods. Claude then gives guidance on what to do, when, and in which direction.
 - **Both charts in full:** the Four Pillars with ten gods, hidden stems and element balance, and the 12-palace Zi Wei grid with star brightness and 四化.
 
 ## Files
@@ -19,6 +20,8 @@ Live version (private until shared): https://claude.ai/artifact/RCtz7MDGep1ChGbR
 | `index.html` | Page layout and styling |
 | `app.js` | Page logic: form, readings, timeline, chat, chart drawing |
 | `engine.js` | Chart casting and all BaZi and Zi Wei scoring rules |
+| `qimen.js` | Qimen Dunjia chart casting and question scoring |
+| `qimen-ui.js` | The Ask a question tab: board, compass, timing chart and Claude's guidance |
 
 Calendar maths comes from [lunar-javascript](https://github.com/6tail/lunar-javascript) (BaZi) and [iztro](https://github.com/SylarLong/iztro) (Zi Wei Dou Shu), loaded from jsDelivr.
 

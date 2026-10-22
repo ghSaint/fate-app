@@ -392,6 +392,8 @@ How to answer:
     return html;
   }
 
+  window.PPShared = { md, esc }; // shared with the Qimen tab
+
   function renderChatShell() {
     $('#s-chat').innerHTML = `<section id="chat-sec">
       <div class="sec-head"><div><div class="eyebrow">Ask Claude</div><h2>Questions about this chart <span class="zh">问命</span></h2></div>
