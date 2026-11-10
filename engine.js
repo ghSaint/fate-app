@@ -706,6 +706,6 @@
   }
 
   root.FateEngine = {
-    analyze, cast, readYear, timeline, ALL_TOPICS, computeBazi, TOPICS, PALACE_EN, STAR_EN, TEN_GOD_EN, GROUP_LABEL, EL_EN, EL_ZH, ELEMENTS, BRANCHES, yearPillarOf, timeIndexFromHour
+    analyze, cast, readYear, timeline, ALL_TOPICS, computeBazi, TOPICS, ADVICE, tenGod, PALACE_EN, STAR_EN, TEN_GOD_EN, GROUP_LABEL, EL_EN, EL_ZH, ELEMENTS, BRANCHES, yearPillarOf, timeIndexFromHour
   };
 })(typeof window !== 'undefined' ? window : globalThis);
