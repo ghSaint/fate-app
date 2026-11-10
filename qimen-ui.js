@@ -1,5 +1,5 @@
 /* Pillars & Palaces: the "Ask a question" tab. Casts a Qimen Dunjia chart, reads it for the question,
-   draws the board, a direction compass and a timing chart, and asks Claude for guidance. */
+   draws the board, a direction compass and a timing chart, and asks the chosen AI model for guidance. */
 (function () {
   'use strict';
   const Q = window.Qimen;
@@ -69,7 +69,7 @@
     if (!t || t.year < 1900 || t.year > 2100) { $('#q-err').textContent = 'Choose a valid date and time between 1900 and 2100.'; return; }
     cast(q, $('#q-topic').value, t, $('#q-method').value, false);
     $('#qm-out').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
-    askClaude(null); // the first answer to the question
+    if (window.LLM && window.LLM.ready()) askClaude(null); // the first answer to the question
   }
 
   function castExample() {
@@ -167,7 +167,7 @@
             <li>Each topic has indicators 用神, for example the Life door 生门 for profit or the Open door 开门 for a job. You are the day stem 日干.</li>
             <li>Each indicator's palace is judged by its door, star and spirit, stem patterns such as 青龙返首, and markers: empty 空亡, oppressed door 门迫, punishment 击刑 and tomb 入墓.</li>
             <li>The five-element relation between your palace and the main indicator's palace shows whether the matter comes to you or pressures you.</li>
-            <li>The total is divided by 6 and capped to −1…+1, then banded like the life readings. Claude then interprets the full board for your question.</li>
+            <li>The total is divided by 6 and capped to −1…+1, then banded like the life readings. The AI model you choose then interprets the full board for your question.</li>
           </ol></div>
           <div class="panel"><h3>Verified</h3><ul>
             <li>The plates were checked against the independent qimen-dunjia package: 385 of 385 random moments matched palace by palace.</li>
@@ -253,17 +253,17 @@
     }).join('')}</div>`;
   }
 
-  // ---------- Claude's guidance ----------
+  // ---------- AI guidance ----------
   function guidePanel() {
     return `<div class="panel chat qm-guide" id="qm-guide">
-      <h3>Claude's guidance <span class="zh">指点</span></h3>
-      <div class="chat-log" id="qm-log" aria-live="polite">${state.isExample ? '<p class="note">Type your own question above and cast the chart, and Claude will read the board for it.</p>' : ''}</div>
+      <h3>AI guidance <span class="zh">指点</span></h3>
+      <div class="chat-log" id="qm-log" aria-live="polite">${state.isExample ? '<p class="note">Type your own question above and cast the chart, and the AI model you chose will read the board for it.</p>' : ''}</div>
       <form class="chat-form" id="qm-form">
         <label for="qm-input" class="note" style="grid-column:1/-1">Ask a follow-up about this chart</label>
         <textarea id="qm-input" placeholder="e.g. What should I say in the meeting? Which day is better?"></textarea>
         <div class="chat-btns"><button class="btn" type="submit" id="qm-send">Ask</button><button class="btn ghost" type="button" id="qm-stop" hidden>Stop</button></div>
       </form>
-      <div class="actions"><span class="note" id="qm-status"></span><button type="button" class="linkbtn" id="qm-ask-now" ${state.isExample ? 'hidden' : ''}>Get Claude's guidance for this chart</button></div>
+      <div class="actions"><span class="note" id="qm-status"></span><button type="button" class="linkbtn" id="qm-ask-now" ${state.isExample ? 'hidden' : ''}>Get AI guidance for this chart</button></div>
     </div>`;
   }
   function wireGuide() {
@@ -279,23 +279,14 @@
     initSample();
   }
 
-  async function initSample() {
-    if (state.sample === undefined) {
-      const hasRuntime = !!(window.claude && window.claude.use);
-      try { state.sample = hasRuntime ? await window.claude.use('sample') : null; } catch (e) { state.sample = null; }
-      state.hasRuntime = hasRuntime;
-      if (state.sample) { try { state.tools = !!(await state.sample.limits()).tools; } catch (e) { state.tools = false; } }
-    }
+  // The chosen AI model lives in llm.js; keep this panel's status line and buttons in step with it.
+  function initSample() {
     const st = $('#qm-status'); if (!st) return;
-    if (!state.sample) {
-      st.textContent = state.hasRuntime
-        ? 'Claude is not reachable in this view. Open the page from its claude.ai/artifact link while signed in, then reload.'
-        : 'This copy of the page is not running inside claude.ai, so Claude’s guidance is unavailable. The board and rule-based reading still work.';
-      $('#qm-send').disabled = true;
-      const b = $('#qm-ask-now'); if (b) b.hidden = true;
-    } else if (state.blocked) {
-      $('#qm-send').disabled = true;
-    } else st.textContent = 'Guidance uses your own Claude account. The first request asks for your permission.';
+    const s2 = window.LLM ? window.LLM.status() : { ok: false, message: 'The AI settings did not load.' };
+    st.innerHTML = `${esc(s2.message)} <button type="button" class="linkbtn" data-ai-open>Change AI model</button>`;
+    $('#qm-send').disabled = !s2.ok || state.busy;
+    const b = $('#qm-ask-now'); if (b) b.hidden = state.isExample || !s2.ok || state.turns.length > 0;
+    if (window.LLM && !state.llmBound) { window.LLM.onChange(initSample); state.llmBound = true; }
   }
 
   const INSTRUCTIONS = `You are an experienced Qimen Dunjia (奇门遁甲) practitioner. Someone has asked a question, and the "Pillars & Palaces" app has cast an hour chart (时家奇门, rotating plate 转盘) for the moment of the question and made a rule-based reading. The chart and reading are below.
@@ -306,7 +297,7 @@ Answer in this order:
 3. **Guidance**: concrete next steps. Include the best timing (use the timing table, and when the indicator is empty 空亡 say when it fills), favourable and unfavourable directions, and what to avoid.
 4. **Caution**: one or two sentences on uncertainty. For health, legal or financial decisions, say a professional should be consulted.
 
-Rules: ground every claim in the chart data. When you go beyond the app's rule-based scores with classical interpretation, say so. Reply in the language of the question, keeping Chinese terms with a short gloss when replying in English. Be practical and balanced, never fatalistic. Keep it under about 400 words; use short headings and bullets.`;
+Rules: write for a layperson with no background in Qimen: explain each technical term in plain words the first time you use it, and make the guidance concrete (what to do, when, where, what to say or avoid). Ground every claim in the chart data. When you go beyond the app's rule-based scores with classical interpretation, say so. Reply in the language of the question, keeping Chinese terms with a short gloss when replying in English. Be practical and balanced, never fatalistic. Keep it under about 400 words; use short headings and bullets.`;
 
   function chartText() {
     const { b, r } = state;
@@ -341,8 +332,8 @@ Rules: ground every claim in the chart data. When you go beyond the app's rule-b
   };
 
   async function askClaude(followUp) {
-    await initSample();
-    if (!state.sample || state.blocked || state.busy || !state.b) return;
+    if (state.blocked || state.busy || !state.b) return;
+    if (!window.LLM || !window.LLM.ready()) { if (window.LLM) window.LLM.open(); initSample(); return; }
     const log = $('#qm-log');
     log.querySelectorAll('p.note').forEach(n => n.remove());
     const userText = followUp || `My question: ${state.q}\nPlease read the chart for it.`;
@@ -357,21 +348,21 @@ Rules: ground every claim in the chart data. When you go beyond the app's rule-b
     state.busy = true; state.ctl = new AbortController();
     $('#qm-send').disabled = true; $('#qm-stop').hidden = false;
     try {
-      const { text, truncated } = await state.sample(msgs, { signal: state.ctl.signal, cache: false, onText: ({ text }) => { bubble.innerHTML = md(text); } });
-      bubble.innerHTML = md(text) + (truncated ? '<p class="err">The answer was cut short. Ask a follow-up for the rest.</p>' : '');
+      const { text, truncated, model } = await window.LLM.ask(msgs, { signal: state.ctl.signal, onText: ({ text }) => { bubble.innerHTML = md(text); } });
+      bubble.innerHTML = md(text) + (truncated ? '<p class="err">The answer was cut short. Ask a follow-up for the rest.</p>' : '') + `<p class="by">Answered by ${esc(model || window.LLM.label())}</p>`;
       state.turns.push({ role: 'assistant', content: text });
     } catch (e) {
       state.turns.pop();
       const code = e && e.code;
       if (code === 'cancelled') bubble.innerHTML = (e.text ? md(e.text) : '') + '<p class="err">Stopped.</p>';
       else {
-        bubble.innerHTML = (e && e.text && code !== 'refused' ? md(e.text) : '') + `<p class="err">${esc(ERR_COPY[code] || 'Claude could not answer just now. Try again.')}</p>`;
+        bubble.innerHTML = (e && e.text && code !== 'refused' ? md(e.text) : '') + `<p class="err">${esc(ERR_COPY[code] || (e && e.message) || 'The AI could not answer just now. Try again.')}</p>`;
         if (code === 'not_granted' || code === 'sampling_disabled') { state.blocked = true; $('#qm-status').textContent = ERR_COPY[code]; }
       }
       if (!state.turns.length && !state.blocked) $('#qm-ask-now').hidden = false;
     } finally {
       state.busy = false;
-      $('#qm-send').disabled = state.blocked;
+      $('#qm-send').disabled = state.blocked || !window.LLM.ready();
       $('#qm-stop').hidden = true;
     }
   }

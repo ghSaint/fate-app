@@ -1,4 +1,4 @@
-/* Pillars & Palaces page logic: form, year reading, luck timeline, Ask Claude chat, and the two charts. */
+/* Pillars & Palaces page logic: form, year reading, luck timeline, Ask AI chat, and the two charts. */
 (function () {
   'use strict';
   const E = window.FateEngine;
@@ -78,6 +78,7 @@
     }
     $('#jump').hidden = false;
     $('#s-summary').innerHTML = renderSummary(state.r, f.name, isExample);
+    renderGuide();
     $('#s-readings').innerHTML = renderReadings(state.r);
     $('#s-bazi').innerHTML = renderBazi(state.r);
     $('#s-ziwei').innerHTML = renderZiwei(state.r);
@@ -87,9 +88,13 @@
     if (state.tl) renderTimeline();
     else {
       $('#s-timeline').innerHTML = `<section>${timelineHead()}<p class="muted">Scoring every year of every luck pillar…</p></section>`;
-      setTimeout(() => { state.tl = E.timeline(state.chart); renderTimeline(); }, 30);
+      setTimeout(() => { state.tl = E.timeline(state.chart); renderTimeline(); renderGuide(); }, 30);
     }
     if (scrollTo) document.getElementById(scrollTo).scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  function renderGuide() {
+    if (window.Guide) $('#s-guide').innerHTML = window.Guide.guide(state.r, state.tl, state.form);
   }
 
   function setYear(y, scrollTo) {
@@ -146,7 +151,7 @@
         <span>Zi Wei 紫微</span>${meter(t.nz)}<span class="num">${sign(t.nz)}</span>
       </div>
       <p class="agree"><b>${t.agreement.kind === 'agree' ? 'Systems agree.' : t.agreement.kind === 'disagree' ? 'Systems disagree.' : 'Partly aligned.'}</b> ${t.agreement.text}</p>
-      <button type="button" class="linkbtn askbtn" data-q="${esc(`Explain my ${t.label.toLowerCase()} reading for ${Y} in more depth. What drives it in each system, and what should I do about it?`)}">Ask Claude about this reading</button>
+      <button type="button" class="linkbtn askbtn" data-q="${esc(`Explain my ${t.label.toLowerCase()} reading for ${Y} in more depth. What drives it in each system, and what should I do about it?`)}">Ask AI about this reading</button>
       <details class="derive">
         <summary>How this was derived (${t.bazi.length + t.zwds.length} rules)</summary>
         <div class="ev-cols">
@@ -223,7 +228,7 @@
         <div class="panel" style="display:grid;gap:10px">
           <h3>Decade highlights</h3>
           <ul class="hl-list">${hl}</ul>
-          <button type="button" class="linkbtn askbtn" data-q="${esc(`Give me a year-by-year outlook for my ${d.pre ? 'childhood period' : d.ganzhi + ' luck pillar'} (${d.startYear}–${d.endYear}). Which years stand out for ${hlTopics.filter(t => t !== 'overall').map(t => tLabel(t).toLowerCase()).join(', ') || 'each area'}, and why?`)}">Ask Claude about this decade</button>
+          <button type="button" class="linkbtn askbtn" data-q="${esc(`Give me a year-by-year outlook for my ${d.pre ? 'childhood period' : d.ganzhi + ' luck pillar'} (${d.startYear}–${d.endYear}). Which years stand out for ${hlTopics.filter(t => t !== 'overall').map(t => tLabel(t).toLowerCase()).join(', ') || 'each area'}, and why?`)}">Ask AI about this decade</button>
         </div>
       </div>
       <div class="panel" style="display:grid;gap:10px">
@@ -319,7 +324,7 @@
     if (qb) { ask(qb.dataset.q); }
   });
 
-  // ---------- Ask Claude ----------
+  // ---------- Ask AI ----------
   const INSTRUCTIONS = `You are an experienced practitioner of both BaZi (八字, Four Pillars) and Zi Wei Dou Shu (紫微斗数), helping someone interpret charts computed by the "Pillars & Palaces" app. The chart data, the app's rule-based year reading and its year-by-year luck timeline are below.
 
 How to answer:
@@ -327,6 +332,8 @@ How to answer:
 - The app's scores come from a rule-based engine: each system's points are summed, divided by 4 and capped to −1…+1, then averaged. Bands: Excellent > +0.45, Good > +0.15, Mixed, Challenging < −0.15, Difficult < −0.45. Use these scores, and when you add classical reasoning beyond the app's rules, label it as your own interpretation.
 - For a year whose full rule breakdown you need, call the get_year_reading tool if it is available.
 - Reply in the language the person writes in. Keep Chinese terms with a short English gloss when replying in English.
+- Write for a layperson with no background in Chinese metaphysics: explain every technical term in plain words the first time you use it.
+- Always end with practical next steps the person can take: what to do, what to avoid, and when. When you mention a useful element, say how to strengthen it in daily life (colours, directions, activities, work, food, surroundings).
 - Be balanced and practical, never fatalistic. For health, legal or financial decisions, say a professional should be consulted.
 - Keep answers under about 350 words unless asked for more depth. Use short headings or bullet points where they help.`;
 
@@ -396,8 +403,8 @@ How to answer:
 
   function renderChatShell() {
     $('#s-chat').innerHTML = `<section id="chat-sec">
-      <div class="sec-head"><div><div class="eyebrow">Ask Claude</div><h2>Questions about this chart <span class="zh">问命</span></h2></div>
-      <span class="note">Claude reads both charts, the year reading and the full luck timeline before answering.</span></div>
+      <div class="sec-head"><div><div class="eyebrow">Ask AI</div><h2>Questions about this chart <span class="zh">问命</span></h2></div>
+      <span class="note">The AI you choose reads both charts, the year reading and the full luck timeline before answering.</span></div>
       <div class="panel chat" id="chat">
         <div class="chat-log" id="chat-log" aria-live="polite"></div>
         <div class="chat-sugg" id="chat-sugg"></div>
@@ -432,24 +439,18 @@ How to answer:
     box.innerHTML = qs.map(q => `<button type="button" data-q="${esc(q)}">${esc(q)}</button>`).join('');
   }
 
-  async function initSample() {
-    const status = $('#chat-status');
-    const hasRuntime = !!(window.claude && window.claude.use);
-    let sample = null;
-    try { sample = hasRuntime ? await window.claude.use('sample') : null; } catch (e) { sample = null; }
-    state.sample = sample;
-    if (!sample) {
-      status.textContent = hasRuntime
-        ? 'Claude is not reachable in this view. Open the page from its claude.ai/artifact link inside claude.ai (not the standalone page tab), signed in, then reload.'
-        : 'This copy of the page is not running inside claude.ai, so it cannot ask Claude. Open the claude.ai/artifact link while signed in to use the chat.';
-      $('#chat-send').disabled = true;
-      return;
-    }
-    let tools = false;
-    try { tools = !!(await sample.limits()).tools; } catch (e) { tools = false; }
-    state.tools = tools;
-    status.textContent = 'Answers use your own Claude account. The first question asks for your permission.';
+  // The chosen AI model lives in llm.js; this keeps the chat's status line and Ask button in step with it.
+  function initSample() {
+    const sync = () => {
+      const status = $('#chat-status'); if (!status) return;
+      const st = window.LLM ? window.LLM.status() : { ok: false, message: 'The AI settings did not load.' };
+      status.innerHTML = `${esc(st.message)} <button type="button" class="linkbtn" data-ai-open>Change AI model</button>`;
+      $('#chat-send').disabled = !st.ok || state.busy;
+    };
+    sync();
+    if (window.LLM && !state.llmBound) { window.LLM.onChange(sync); state.llmBound = true; }
   }
+  document.addEventListener('click', ev => { if (ev.target.closest('[data-ai-open]') && window.LLM) window.LLM.open(); });
 
   function resetChat(note) {
     if (state.ctl) state.ctl.abort();
@@ -473,8 +474,7 @@ How to answer:
     q = (q || '').trim();
     if (!q || state.busy || !state.r || state.chatBlocked) return;
     document.getElementById('s-chat').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
-    const sample = state.sample;
-    if (!sample) { $('#chat-status').textContent = state.sample === undefined ? 'Still connecting to Claude. Try again in a moment.' : 'Asking Claude works when this page is opened on claude.ai.'; return; }
+    if (!window.LLM || !window.LLM.ready()) { if (window.LLM) window.LLM.open(); initSample(); return; }
     const log = $('#chat-log');
     log.querySelectorAll('p.note').forEach(n => n.remove());
     log.insertAdjacentHTML('beforeend', `<div class="msg user">${esc(q)}</div><div class="msg bot"><span class="thinking">Thinking… reading both charts</span></div>`);
@@ -487,13 +487,13 @@ How to answer:
 
     state.busy = true; state.ctl = new AbortController();
     $('#chat-send').disabled = true; $('#chat-stop').hidden = false;
-    const opts = { signal: state.ctl.signal, cache: false, onText: ({ text }) => { bubble.innerHTML = md(text); log.scrollTop = log.scrollHeight; } };
-    if (state.tools) {
+    const opts = { signal: state.ctl.signal, onText: ({ text }) => { bubble.innerHTML = md(text); log.scrollTop = log.scrollHeight; } };
+    if (window.LLM.supportsTools() && state.tools !== false) {
       opts.tools = [{ ...yearTool, execute: input => { bubble.innerHTML = `<span class="thinking">Looking up the ${esc(String(input.year))} rule breakdown…</span>`; return yearTool.execute(input); } }];
     }
     try {
-      const { text, truncated } = await sample(msgs, opts);
-      bubble.innerHTML = md(text) + (truncated ? '<p class="err">The answer was cut short. Ask a narrower question for the rest.</p>' : '');
+      const { text, truncated, model } = await window.LLM.ask(msgs, opts);
+      bubble.innerHTML = md(text) + (truncated ? '<p class="err">The answer was cut short. Ask a narrower question for the rest.</p>' : '') + `<p class="by">Answered by ${esc(model || window.LLM.label())}</p>`;
       state.turns.push({ role: 'assistant', content: text });
     } catch (e) {
       state.turns.pop();
@@ -501,12 +501,12 @@ How to answer:
       if (code === 'cancelled') bubble.innerHTML = (e.text ? md(e.text) : '') + '<p class="err">Stopped.</p>';
       else if (code === 'tools_unavailable') { state.tools = false; bubble.innerHTML = '<p class="err">Year lookups are not available here. Ask again and Claude will answer from the timeline data.</p>'; }
       else {
-        bubble.innerHTML = (e && e.text && code !== 'refused' ? md(e.text) : '') + `<p class="err">${esc(ERR_COPY[code] || 'Claude could not answer just now. Try again.')}</p>`;
+        bubble.innerHTML = (e && e.text && code !== 'refused' ? md(e.text) : '') + `<p class="err">${esc(ERR_COPY[code] || (e && e.message) || 'The AI could not answer just now. Try again.')}</p>`;
         if (code === 'not_granted' || code === 'sampling_disabled') { state.chatBlocked = true; $('#chat-status').textContent = ERR_COPY[code]; }
       }
     } finally {
       state.busy = false;
-      $('#chat-send').disabled = !!state.chatBlocked;
+      $('#chat-send').disabled = !!state.chatBlocked || !window.LLM.ready();
       $('#chat-stop').hidden = true;
       $('#chat-clear').hidden = state.turns.length === 0;
       log.scrollTop = log.scrollHeight;
@@ -551,7 +551,8 @@ How to answer:
           <p class="note" style="margin:0">Stems count 1 each; each branch's 1 point is split across its hidden stems.</p>
         </div>
       </div>
-      <div class="panel" style="display:grid;gap:10px"><h3>Day Master strength and useful elements <span class="zh">身强身弱 · 喜用神</span></h3><ul class="notes">${bz.strengthNotes.map(n => `<li>${n}</li>`).join('')}</ul></div>
+      <div class="panel" style="display:grid;gap:10px"><h3>Day Master strength and useful elements <span class="zh">身强身弱 · 喜用神</span></h3><ul class="notes">${bz.strengthNotes.map(n => `<li>${n}</li>`).join('')}</ul><p class="note" style="margin:0"><a href="#s-guide">How to strengthen your useful element in daily life</a> is in Your guide above.</p></div>
+      ${window.Guide ? window.Guide.tenGods(bz) : ''}
       <div class="panel" style="display:grid;gap:10px"><h3>10-year luck pillars <span class="zh">大运</span></h3>
         <p class="note" style="margin:0">Luck starts at about ${bz.luckStart.years} years ${bz.luckStart.months} months (${bz.luckStart.date}). The highlighted pillar covers ${r.Y}. See the luck timeline above for year-by-year scores.</p>
         <div class="luck">${luck}</div></div>
@@ -627,7 +628,7 @@ How to answer:
           <li>Each system's points are summed, divided by 4 and capped to −1…+1, then averaged with equal weight and banded into five verdicts.</li>
           <li>The luck timeline repeats this for every year of every 10-year pillar, so each decade shows which years rise and fall for each topic.</li>
           <li>Zi Wei decades 大限 start at different ages from BaZi luck pillars; each decade summary lists the Zi Wei decades it overlaps.</li>
-          <li>Ask Claude sends both charts, the year reading and the timeline to Claude with your question. Its answers add interpretation on top of these rules and say when they do.</li>
+          <li>Ask AI sends both charts, the year reading and the timeline to the AI model you choose (Claude on claude.ai, Claude Code, or LM Studio) with your question. Its answers add interpretation on top of these rules and say when they do.</li>
         </ul></div>
       </div>
       <p class="disclaimer">Charts are calculated with the open-source lunar-javascript and iztro libraries. Birth time is taken as local clock time, without true-solar-time correction. Readings are for cultural interest and reflection, not for medical, financial or legal decisions.</p>

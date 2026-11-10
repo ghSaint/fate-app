@@ -282,6 +282,61 @@ table.heat td { padding: 0; }
 .check { display: flex; gap: 8px; align-items: center; font-size: .88rem; color: var(--muted); cursor: pointer; }
 .check input { width: 16px; height: 16px; accent-color: var(--accent); }
 
+/* Your guide */
+.g-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; align-items: start; }
+.g-panel { display: grid; gap: 8px; align-content: start; }
+.g-panel p { margin: 0; }
+.g-panel h4 { margin: 6px 0 0; font-size: .95rem; }
+.g-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: .93rem; }
+.g-list li { padding-left: 18px; position: relative; }
+.g-list li::before { content: "•"; position: absolute; left: 4px; color: var(--muted); }
+.g-list li.up::before { content: "▲"; font-size: .7em; top: .35em; color: var(--pos); }
+.g-list li.down::before { content: "▼"; font-size: .7em; top: .35em; color: var(--neg); }
+.g-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: .93rem; }
+.g-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.boost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.boost { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.boost.primary { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.boost h4 { margin: 0; font-family: var(--f-display); font-size: 1.1rem; }
+.boost h4 small { font-family: var(--f-body); font-size: .74rem; color: var(--accent); font-weight: 600; margin-left: 6px; }
+.boost p { margin: 0; color: var(--muted); font-size: .9rem; }
+.boost dl { margin: 0; display: grid; grid-template-columns: 112px 1fr; gap: 4px 10px; font-size: .88rem; }
+.boost dt { color: var(--muted); font-weight: 600; }
+.boost dd { margin: 0; }
+.tg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.tg-pillar { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--paper); }
+.tg-pillar h4 { margin: 0 0 6px; font-size: .98rem; display: grid; }
+.tg-pillar h4 small { font-weight: 500; color: var(--muted); font-size: .76rem; }
+.tg-pillar ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: .88rem; }
+.tg-pillar li { display: grid; grid-template-columns: 58px 1fr; gap: 8px; }
+.tg { font-family: var(--f-display); font-weight: 700; font-size: .85rem; color: var(--accent); }
+b.ok { color: var(--good); }
+b.warn { color: var(--mid); }
+
+/* AI model picker */
+.ai-chip { margin-left: auto; align-self: center; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: .82rem; color: var(--muted); cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-chip b { color: var(--ink); font-weight: 600; }
+.ai-chip:hover { border-color: var(--accent); }
+.ai-panel { display: grid; gap: 12px; }
+.ai-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ai-provs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.ai-prov { position: relative; display: flex; gap: 8px; align-items: start; border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; cursor: pointer; background: var(--paper); }
+.ai-prov input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.ai-prov span { display: grid; gap: 2px; }
+.ai-prov small { color: var(--muted); font-size: .76rem; }
+.ai-prov.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.ai-prov:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ai-panel .field { max-width: 520px; }
+.ai-panel .fields .field { max-width: none; }
+.ai-status { margin: 0; font-size: .86rem; font-weight: 600; }
+.ai-status.ok { color: var(--good); }
+.ai-status.bad { color: var(--mid); }
+.ai-checks { margin: 0; padding-left: 18px; font-size: .84rem; display: grid; gap: 2px; }
+.ai-checks .ok { color: var(--good); }
+.ai-checks .bad { color: var(--bad); }
+.ai-panel code, .note code { font-family: var(--f-mono); font-size: .85em; background: var(--paper); padding: 0 4px; border-radius: 3px; }
+.msg .by { font-size: .74rem; color: var(--muted); margin: 8px 0 0; }
+
 /* Qimen */
 .qm-top { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 1100px) { .qm-top { grid-template-columns: 1fr; } }
@@ -348,7 +403,7 @@ table.heat td { padding: 0; }
       <h1>Pillars &amp; Palaces</h1>
       <span class="seal">八字 · 紫微 · 奇门</span>
       <p id="brand-life">Enter a birth date and time. The app casts a BaZi Four Pillars chart and a Zi Wei Dou Shu chart, then reads the year you choose using both, showing every rule it applied.</p>
-      <p id="brand-qm" hidden>Ask a question. The app casts a Qimen Dunjia chart for the moment you ask, reads it for your question, and Claude explains what to do, when, and in which direction.</p>
+      <p id="brand-qm" hidden>Ask a question. The app casts a Qimen Dunjia chart for the moment you ask, reads it for your question, and an AI model of your choice explains what to do, when, and in which direction.</p>
     </div>
     <div class="tabs" role="tablist" aria-label="Tools">
       <button type="button" role="tab" id="tab-life" aria-controls="f" aria-selected="true">Life chart <span class="zh">命盘</span></button>
@@ -404,9 +459,10 @@ table.heat td { padding: 0; }
   <div class="wrap" id="out">
     <p class="muted" id="loading">Loading the calendar libraries…</p>
     <nav class="jump" id="jump" hidden aria-label="Sections">
-      <a href="#s-readings">Year reading</a><a href="#s-timeline">Luck timeline</a><a href="#s-chat">Ask Claude</a><a href="#s-bazi">BaZi chart</a><a href="#s-ziwei">Zi Wei chart</a><a href="#s-method">Method</a>
+      <a href="#s-guide">Your guide</a><a href="#s-readings">Year reading</a><a href="#s-timeline">Luck timeline</a><a href="#s-chat">Ask AI</a><a href="#s-bazi">BaZi chart</a><a href="#s-ziwei">Zi Wei chart</a><a href="#s-method">Method</a>
     </nav>
     <div id="s-summary"></div>
+    <div id="s-guide"></div>
     <div id="s-readings"></div>
     <div id="s-timeline"></div>
     <div id="s-chat"></div>
@@ -420,6 +476,8 @@ table.heat td { padding: 0; }
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.7/lunar.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/iztro@2.6.1/dist/iztro.min.js"></script>
 <script src="engine.js"></script>
+<script src="guide.js"></script>
+<script src="llm.js"></script>
 <script src="app.js"></script>
 <script src="qimen.js"></script>
 <script src="qimen-ui.js"></script>
